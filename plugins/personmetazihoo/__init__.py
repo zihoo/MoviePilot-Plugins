@@ -31,23 +31,23 @@ from app.utils.http import RequestUtils
 from app.utils.string import StringUtils
 
 
-class PersonMeta(_PluginBase):
+class PersonMetaZihoo(_PluginBase):
     # 插件名称
-    plugin_name = "演职人员刮削"
+    plugin_name = "演职人员刮削（Zihoo）"
     # 插件描述
     plugin_desc = "刮削演职人员图片以及中文名称。"
     # 插件图标
     plugin_icon = "actor.png"
     # 插件版本
-    plugin_version = "1.1"
+    plugin_version = "1.2"
     # 插件作者
-    plugin_author = "jxxghp"
+    plugin_author = "zihoo"
     # 作者主页
-    author_url = "https://github.com/jxxghp"
+    author_url = "https://github.com/zihoo"
     # 插件配置项ID前缀
-    plugin_config_prefix = "personmeta_"
+    plugin_config_prefix = "personmetazihoo_"
     # 加载顺序
-    plugin_order = 24
+    plugin_order = 100
     # 可使用的用户级别
     auth_level = 1
 
@@ -62,6 +62,7 @@ class PersonMeta(_PluginBase):
     _onlyonce = False
     _cron = None
     _delay = 0
+    _libraries = "all"
     _type = "all"
     _remove_nozh = False
 
@@ -72,6 +73,7 @@ class PersonMeta(_PluginBase):
             self._enabled = config.get("enabled")
             self._onlyonce = config.get("onlyonce")
             self._cron = config.get("cron")
+            self._libraries = config.get("libraries") or "all"
             self._type = config.get("type") or "all"
             self._delay = config.get("delay") or 0
             self._remove_nozh = config.get("remove_nozh") or False
@@ -87,7 +89,7 @@ class PersonMeta(_PluginBase):
                     try:
                         self._scheduler.add_job(func=self.scrap_library,
                                                 trigger=CronTrigger.from_crontab(self._cron),
-                                                name="演职人员刮削")
+                                                name="演职人员刮削（Zihoo）")
                         logger.info(f"演职人员刮削服务启动，周期：{self._cron}")
                     except Exception as e:
                         logger.error(f"演职人员刮削服务启动失败，错误信息：{str(e)}")
@@ -116,6 +118,7 @@ class PersonMeta(_PluginBase):
             "enabled": self._enabled,
             "onlyonce": self._onlyonce,
             "cron": self._cron,
+            "libraries": self._libraries,
             "type": self._type,
             "delay": self._delay,
             "remove_nozh": self._remove_nozh
@@ -221,6 +224,23 @@ class PersonMeta(_PluginBase):
                                 },
                                 'content': [
                                     {
+                                        'component': 'VTextField',
+                                        'props': {
+                                            'model': 'libraries',
+                                            'label': '媒体库名称列表，多个用逗号分隔',
+                                            'placeholder': 'all'
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                'component': 'VCol',
+                                'props': {
+                                    'cols': 12,
+                                    'md': 4
+                                },
+                                'content': [
+                                    {
                                         'component': 'VSelect',
                                         'props': {
                                             'model': 'type',
@@ -263,6 +283,7 @@ class PersonMeta(_PluginBase):
             "enabled": False,
             "onlyonce": False,
             "cron": "",
+            "libraries": "all",
             "type": "all",
             "delay": 30,
             "remove_nozh": False
@@ -308,26 +329,28 @@ class PersonMeta(_PluginBase):
         if not settings.MEDIASERVER:
             return
         for server in settings.MEDIASERVER.split(","):
-            # 扫描所有媒体库
             logger.info(f"开始刮削服务器 {server} 的演员信息 ...")
             for library in self.mschain.librarys(server):
-                logger.info(f"开始刮削媒体库 {library.name} 的演员信息 ...")
-                for item in self.mschain.items(server, library.id):
-                    if not item:
-                        continue
-                    if not item.item_id:
-                        continue
-                    if "Series" not in item.item_type \
-                            and "Movie" not in item.item_type:
-                        continue
-                    if self._event.is_set():
-                        logger.info(f"演职人员刮削服务停止")
-                        return
-                    # 处理条目
-                    logger.info(f"开始刮削 {item.title} 的演员信息 ...")
-                    self.__update_item(server=server, item=item)
-                    logger.info(f"{item.title} 的演员信息刮削完成")
-                logger.info(f"媒体库 {library.name} 的演员信息刮削完成")
+                if self._libraries == "all" \
+                        or library.name in self._libraries.split(","):
+                    # 扫描指定媒体库
+                    logger.info(f"开始刮削媒体库 {library.name} 的演员信息 ...")
+                    for item in self.mschain.items(server, library.id):
+                        if not item:
+                            continue
+                        if not item.item_id:
+                            continue
+                        if "Series" not in item.item_type \
+                                and "Movie" not in item.item_type:
+                            continue
+                        if self._event.is_set():
+                            logger.info(f"演职人员刮削服务停止")
+                            return
+                        # 处理条目
+                        logger.info(f"开始刮削 {item.title} 的演员信息 ...")
+                        self.__update_item(server=server, item=item)
+                        logger.info(f"{item.title} 的演员信息刮削完成")
+                    logger.info(f"媒体库 {library.name} 的演员信息刮削完成")
             logger.info(f"服务器 {server} 的演员信息刮削完成")
 
     def __update_peoples(self, server: str, itemid: str, iteminfo: dict, douban_actors):
