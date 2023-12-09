@@ -31,9 +31,9 @@ from app.utils.http import RequestUtils
 from app.utils.string import StringUtils
 
 
-class PersonMetaZihoo(_PluginBase):
+class PersonMetaZ(_PluginBase):
     # 插件名称
-    plugin_name = "演职人员刮削（Zihoo）"
+    plugin_name = "演职人员刮削-Z"
     # 插件描述
     plugin_desc = "刮削演职人员图片以及中文名称。"
     # 插件图标
@@ -45,7 +45,7 @@ class PersonMetaZihoo(_PluginBase):
     # 作者主页
     author_url = "https://github.com/zihoo"
     # 插件配置项ID前缀
-    plugin_config_prefix = "personmetazihoo_"
+    plugin_config_prefix = "personmetaz_"
     # 加载顺序
     plugin_order = 100
     # 可使用的用户级别
@@ -89,7 +89,7 @@ class PersonMetaZihoo(_PluginBase):
                     try:
                         self._scheduler.add_job(func=self.scrap_library,
                                                 trigger=CronTrigger.from_crontab(self._cron),
-                                                name="演职人员刮削（Zihoo）")
+                                                name="演职人员刮削-Z")
                         logger.info(f"演职人员刮削服务启动，周期：{self._cron}")
                     except Exception as e:
                         logger.error(f"演职人员刮削服务启动失败，错误信息：{str(e)}")
