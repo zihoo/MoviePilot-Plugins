@@ -30,7 +30,7 @@ class DoubanSyncZ(_PluginBase):
     # 插件图标
     plugin_icon = "douban.png"
     # 插件版本
-    plugin_version = "1.3"
+    plugin_version = "1.5"
     # 插件作者
     plugin_author = "zihoo"
     # 作者主页
@@ -43,8 +43,6 @@ class DoubanSyncZ(_PluginBase):
     auth_level = 2
 
     # 私有变量
-    # _interests_url: str = "https://www.douban.com/feed/people/%s/interests"
-    _interests_url: str = "https://rss.zihoo.me:444/douban/people/%s/wish/pagesCount=%s"
     _scheduler: Optional[BackgroundScheduler] = None
     _cache_path: Optional[Path] = None
     rsshelper = None
@@ -57,8 +55,9 @@ class DoubanSyncZ(_PluginBase):
     _onlyonce: bool = False
     _cron: str = ""
     _notify: bool = False
-    _pages: int = 1
+    _rsshub: str = ""
     _users: str = ""
+    _pages: int = 1
     _clear: bool = False
     _clearflag: bool = False
 
@@ -76,8 +75,9 @@ class DoubanSyncZ(_PluginBase):
             self._enabled = config.get("enabled")
             self._cron = config.get("cron")
             self._notify = config.get("notify")
-            self._pages = config.get("pages") or 1
+            self._rsshub = config.get("rsshub") or "https://rsshub.app"
             self._users = config.get("users")
+            self._pages = config.get("pages") or 1
             self._onlyonce = config.get("onlyonce")
             self._clear = config.get("clear")
 
@@ -240,9 +240,9 @@ class DoubanSyncZ(_PluginBase):
                                     {
                                         'component': 'VTextField',
                                         'props': {
-                                            'model': 'pages',
-                                            'label': '同步页数',
-                                            'placeholder': '同步页数，每页15项，默认1'
+                                            'model': 'rsshub',
+                                            'label': 'RSSHub地址',
+                                            'placeholder': 'RSSHub地址，留空默认https://rsshub.app'
                                         }
                                     }
                                 ]
@@ -264,7 +264,24 @@ class DoubanSyncZ(_PluginBase):
                                         }
                                     }
                                 ]
-                            }
+                            },
+                            {
+                                'component': 'VCol',
+                                'props': {
+                                    'cols': 12,
+                                    'md': 6
+                                },
+                                'content': [
+                                    {
+                                        'component': 'VTextField',
+                                        'props': {
+                                            'model': 'pages',
+                                            'label': '同步页数',
+                                            'placeholder': '同步页数，每页15项，默认1'
+                                        }
+                                    }
+                                ]
+                            },
                         ]
                     },
                     {
@@ -295,6 +312,7 @@ class DoubanSyncZ(_PluginBase):
             "notify": True,
             "onlyonce": False,
             "cron": "*/30 * * * *",
+            "rsshub": "https://rsshub.app",
             "users": "",
             "pages": 1,
             "clear": False
@@ -412,8 +430,9 @@ class DoubanSyncZ(_PluginBase):
             "notify": self._notify,
             "onlyonce": self._onlyonce,
             "cron": self._cron,
-            "pages": self._pages,
+            "rsshub": self._rsshub,
             "users": self._users,
+            "pages": self._pages,
             "clear": self._clear
         })
 
@@ -446,7 +465,8 @@ class DoubanSyncZ(_PluginBase):
             if not user_id:
                 continue
             logger.info(f"开始同步用户 {user_id} 的豆瓣想看数据 ...")
-            url = self._interests_url % (user_id, self._pages)
+            url = f"{self._rsshub}/douban/people/{user_id}/wish/pagesCount={self._pages}"
+
             results = self.rsshelper.parse(url)
             if not results:
                 logger.warn(f"未获取到用户 {user_id} 豆瓣RSS数据：{url}")
