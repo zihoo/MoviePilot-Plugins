@@ -30,7 +30,7 @@ class DoubanSyncZ(_PluginBase):
     # 插件图标
     plugin_icon = "douban.png"
     # 插件版本
-    plugin_version = "1.5"
+    plugin_version = "1.6"
     # 插件作者
     plugin_author = "zihoo"
     # 作者主页
@@ -465,7 +465,7 @@ class DoubanSyncZ(_PluginBase):
             if not user_id:
                 continue
             logger.info(f"开始同步用户 {user_id} 的豆瓣想看数据 ...")
-            url = f"{self._rsshub}/douban/people/{user_id}/wish/pagesCount={self._pages}"
+            url = f"{self._rsshub}/douban/people/{user_id}/wish?pagesCount={self._pages}"
 
             results = self.rsshelper.parse(url)
             if not results:

@@ -2,7 +2,7 @@
     "DoubanSyncZ": {
         "name": "豆瓣想看-Z",
         "description": "同步豆瓣想看数据，自动添加订阅。",
-        "version": "1.5",
+        "version": "1.6",
         "icon": "douban.png",
         "author": "zihoo",
         "level": 2
